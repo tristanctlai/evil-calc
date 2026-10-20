@@ -20,8 +20,6 @@
             width: 340px;
             padding: 20px;
             background: white;
-            border-radius: 16px;
-            box-shadow: 0 8px 25px #00000020
         }
 
         #display {
@@ -30,7 +28,6 @@
             padding: 12px;
             box-sizing: border-box;
             background: #f3f3f3;
-            border-radius: 8px;
             font-size: 28px;
             text-align: right;
             overflow-wrap: anywhere;
@@ -42,7 +39,6 @@
             overflow: visible;
             background: #fafafa;
             border: 1px solid #dddddd;
-            border-radius: 8px;
         }
 
         #keys,
@@ -56,23 +52,22 @@
             width: 65px;
             height: 58px;
             border: 1px solid #cccccc;
-            border-radius: 8px;
             background: #e8e8e8;
         }
 
         .label {
             position: absolute;
-            width: 65px;
-            height: 58px;
+            width: 70px;
+            height: 70px;
             display: flex;
             justify-content: center;
             align-items: center;
             box-sizing: border-box;
             border: 1px solid #555555;
-            border-radius: 8px;
             background: white;
             font-size: 22px;
             font-weight: bold;
+            font-family: 'Courier New', Courier, monospace;
             cursor: grab;
             user-select: none;
             touch-action: none;
@@ -116,8 +111,8 @@
             const column = index % 4;
             const row = Math.floor(index / 4);
 
-            key.style.left = `${column * 75 + 10}px`;
-            key.style.top = `${row * 68 + 10}px`;
+            key.style.left = `${column * 80 + 15}px`;
+            key.style.top = `${row * 75 + 9}px`;
             keys.push({ value: value, element: key });
         }
 
