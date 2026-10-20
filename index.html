@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+
+
+<head>
+    <meta charset="UTF-8">
+    <title> EVIL CALC</title>
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #eeeeee;
+            font-family: Arial, sans-serif;
+        }
+
+        #calculator {
+            width: 340px;
+            padding: 20px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 25px #00000020
+        }
+
+        #display {
+            min-height: 55px;
+            margin-bottom: 15px;
+            padding: 12px;
+            box-sizing: border-box;
+            background: #f3f3f3;
+            border-radius: 8px;
+            font-size: 28px;
+            text-align: right;
+            overflow-wrap: anywhere;
+        }
+
+        #arena {
+            position: relative;
+            height: 390px;
+            overflow: visible;
+            background: #fafafa;
+            border: 1px solid #dddddd;
+            border-radius: 8px;
+        }
+
+        #keys,
+        #label-layer {
+            position: absolute;
+            inset: 0;
+        }
+
+        .key {
+            position: absolute;
+            width: 65px;
+            height: 58px;
+            border: 1px solid #cccccc;
+            border-radius: 8px;
+            background: #e8e8e8;
+        }
+
+        .label {
+            position: absolute;
+            width: 65px;
+            height: 58px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-sizing: border-box;
+            border: 1px solid #555555;
+            border-radius: 8px;
+            background: white;
+            font-size: 22px;
+            font-weight: bold;
+            cursor: grab;
+            user-select: none;
+            touch-action: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="calculator">
+        <div id="display">0</div>
+        <div id="arena">
+            <div id="keys"></div>
+            <div id="label-layer"></div>
+        </div>
+    </div>
+
+    <script>
+        const display = document.getElementById("display");
+        const arena = document.getElementById("arena");
+        const keysLayer = document.getElementById("keys");
+        const labelLayer = document.getElementById("label-layer");
+        const keyValues = [
+            "7", "8", "9", "/",
+            "4", "5", "6", "*",
+            "1", "2", "3", "-",
+            "C", "0", "=", "+",
+            "⌫"
+
+        ];
+        const keys = [];
+        const labels = [];
+
+        for (const value of keyValues) {
+            const key = document.createElement("div");
+            key.classList.add("key");
+            key.addEventListener("click", startGravity);
+            keysLayer.appendChild(key);
+
+            const index = keyValues.indexOf(value);
+            const column = index % 4;
+            const row = Math.floor(index / 4);
+
+            key.style.left = `${column * 75 + 10}px`;
+            key.style.top = `${row * 68 + 10}px`;
+            keys.push({ value: value, element: key });
+        }
+
+        function createLabel(value, x, y, state) {
+            const element = document.createElement("div");
+            element.classList.add("label");
+            element.textContent = value;
+
+            labelLayer.appendChild(element);
+            element.style.transform = `translate(${x}px, ${y}px)`;
+            element.addEventListener("click", startGravity);
+           
+
+            
+            const label = {
+                value: value,
+                element: element,
+                x: x,
+                y: y,
+                vx: 0,
+                vy: 0,
+                state: state
+            };
+
+         element.addEventListener("pointerdown", function (event) {
+                event.preventDefault();
+
+                if(!chaos){
+                    startGravity();
+                    return;
+                }
+                startDragging(event, label);
+         });
+
+         element.addEventListener("pointermove", moveDraggedLabel);
+            element.addEventListener("pointerup", finishDragging);
+
+        
+        labels.push(label);
+        return label;
+        }
+
+        for (const key of keys) {
+            createLabel(
+                key.value,
+                parseFloat(key.element.style.left),
+                parseFloat(key.element.style.top),
+                "attached"
+            );
+        }
+
+        let chaos = false;
+
+        function startGravity() {
+            if (chaos) {
+                return;
+            }
+
+            chaos = true;
+
+            for (const label of labels) {
+                label.state = "falling";
+                label.vx = (Math.random() - 0.5) * 180;
+                label.vy = Math.random() * 60;
+            }
+        }
+
+        let draggedLabel = null;
+        function startDragging(event, label) {
+            draggedLabel = label;
+            label.state = "dragging";
+           
+            label.vy = 0;
+
+            label.element.setPointerCapture(event.pointerId);
+            
+        }
+
+        function moveDraggedLabel(event) {
+            if (draggedLabel == null) {
+                return;
+            }
+
+            const rect = arena.getBoundingClientRect();
+
+            draggedLabel.x =
+                event.clientX - rect.left - draggedLabel.element.offsetWidth / 2;
+            draggedLabel.y =
+                event.clientY - rect.top - draggedLabel.element.offsetHeight / 2;
+
+            draggedLabel.element.style.transform =
+                `translate(${draggedLabel.x}px, ${draggedLabel.y}px)`;
+        }
+
+
+        function isOverDisplay(label) {
+            const displayRect = display.getBoundingClientRect();
+            const arenaRect = arena.getBoundingClientRect();
+
+            const centerX = arenaRect.left + label.x + label.element.offsetWidth / 2;
+            const centerY = arenaRect.top + label.y + label.element.offsetHeight / 2;
+
+            return (
+                centerX >= displayRect.left &&
+                centerX <= displayRect.right &&
+                centerY >= displayRect.top &&
+                centerY <= displayRect.bottom
+            )
+        }
+        function finishDragging() {
+            if (draggedLabel == null) {
+                return;
+            }
+
+            const label = draggedLabel;
+            draggedLabel = null;
+
+            if (isOverDisplay(label)) {
+                enterCharacter(label);
+            } else {
+                label.state = "falling";
+            }
+        }
+
+        let expression = "";
+
+        function calculateExpression(input){
+            if(!/^[0-9+\-*/.()]+$/.test(input)){
+                throw new Error("Invalid Expression");
+            }
+            return eval(input);
+        }
+        function enterCharacter(label) {
+            const value = label.value;
+
+            if (value === "C") {
+                expression = "";
+                display.textContent = "0";
+            } else if (value === "=") {
+                try{
+                    const answer = calculateExpression(expression);
+                    expression = String(answer);
+                    display.textContent = expression;
+                } catch(error){
+                    expression = "";
+                    display.textContent = "Error";
+                }
+            } else if (value === "⌫"){
+                expression = expression.slice(0, -1);
+                display.textContent = expression || "0";
+            } else {
+                expression += value;
+                display.textContent = expression;
+            }
+
+            label.state = "used";
+            label.element.remove();
+
+            const matchingKey = keys.find(key => key.value === value);
+            if (matchingKey) {
+                const keyRect = matchingKey.element.getBoundingClientRect();
+                const arenaRect = arena.getBoundingClientRect();
+
+                const x = keyRect.left - arenaRect.left;
+                const y = keyRect.top - arenaRect.top;
+
+                const replacement = createLabel(value, x, y, "falling");
+
+                replacement.vx = (Math.random() - 0.5) * 100;
+                replacement.vy = 0;
+            }
+        }
+
+        const gravity = 900;
+        const sideSpeed = 100;
+        let previousTimestamp = 0;
+
+        function animate(timestamp) {
+            let dt = 0;
+
+            if (previousTimestamp !== 0) {
+                dt = (timestamp - previousTimestamp) / 1000;
+            }
+
+            previousTimestamp = timestamp;
+
+            for (const label of labels) {
+                if (label.state !== "falling") {
+                    continue;
+                }
+
+                label.vy += gravity * dt;
+                label.x += label.vx * dt;
+                label.y += label.vy * dt;
+                label.element.style.transform =
+                    `translate(${label.x}px, ${label.y}px)`;
+
+                const maxX = arena.clientWidth - label.element.offsetWidth;
+                const maxY = arena.clientHeight - label.element.offsetHeight;
+
+                if (label.x < 0) {
+                    label.x = 0;
+                    label.vx = Math.abs(label.vx);
+                }
+
+                if (label.x > maxX) {
+                    label.x = maxX;
+                    label.vx = -Math.abs(label.vx);
+                }
+
+                if (label.y > maxY) {
+                    label.y = maxY;
+                    label.vy = -300;
+                }
+                if (label.y  === 0){
+                    label.vx = sideSpeed;
+                }
+
+            }
+            requestAnimationFrame(animate);
+
+        }
+        requestAnimationFrame(animate);
+    </script>
+</body>
+
+</html>
