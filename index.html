@@ -106,6 +106,7 @@
         const labels = [];
 
         for (const value of keyValues) {
+            
             const key = document.createElement("div");
             key.classList.add("key");
             key.addEventListener("click", startGravity);
@@ -128,9 +129,9 @@
             labelLayer.appendChild(element);
             element.style.transform = `translate(${x}px, ${y}px)`;
             element.addEventListener("click", startGravity);
-           
 
-            
+
+
             const label = {
                 value: value,
                 element: element,
@@ -141,22 +142,22 @@
                 state: state
             };
 
-         element.addEventListener("pointerdown", function (event) {
+            element.addEventListener("pointerdown", function (event) {
                 event.preventDefault();
 
-                if(!chaos){
+                if (!chaos) {
                     startGravity();
                     return;
                 }
                 startDragging(event, label);
-         });
+            });
 
-         element.addEventListener("pointermove", moveDraggedLabel);
+            element.addEventListener("pointermove", moveDraggedLabel);
             element.addEventListener("pointerup", finishDragging);
 
-        
-        labels.push(label);
-        return label;
+
+            labels.push(label);
+            return label;
         }
 
         for (const key of keys) {
@@ -188,11 +189,11 @@
         function startDragging(event, label) {
             draggedLabel = label;
             label.state = "dragging";
-           
+
             label.vy = 0;
 
             label.element.setPointerCapture(event.pointerId);
-            
+
         }
 
         function moveDraggedLabel(event) {
@@ -243,8 +244,8 @@
 
         let expression = "";
 
-        function calculateExpression(input){
-            if(!/^[0-9+\-*/.()]+$/.test(input)){
+        function calculateExpression(input) {
+            if (!/^[0-9+\-*/.()]+$/.test(input)) {
                 throw new Error("Invalid Expression");
             }
             return eval(input);
@@ -252,22 +253,26 @@
         function enterCharacter(label) {
             const value = label.value;
 
-            if (value === "C") {
-                expression = "";
-                display.textContent = "0";
-            } else if (value === "=") {
-                try{
-                    const answer = calculateExpression(expression);
-                    expression = String(answer);
-                    display.textContent = expression;
-                } catch(error){
+            switch (value) {
+                case "C":
                     expression = "";
-                    display.textContent = "Error";
-                }
-            } else if (value === "⌫"){
-                expression = expression.slice(0, -1);
-                display.textContent = expression || "0";
-            } else {
+                    display.textContent = "0";
+                    break;
+                case "⌫":
+                    expression = expression.slice(0, -1);
+                    display.textContent = expression || "0";
+                    break;
+                case "=":
+                    try {
+                        const answer = calculateExpression(expression);
+                        expression = String(answer);
+                        display.textContent = expression;
+                    } catch (error) {
+                        expression = "";
+                        display.textContent = "Error";
+                    }
+                    break;
+             default :
                 expression += value;
                 display.textContent = expression;
             }
@@ -331,7 +336,7 @@
                     label.y = maxY;
                     label.vy = -300;
                 }
-                if (label.y  === 0){
+                if (label.y === 0) {
                     label.vx = sideSpeed;
                 }
 
